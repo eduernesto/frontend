@@ -42,6 +42,8 @@ export function calculateFillPercentage(distancia) {
   return Math.round(((MAX_DIST - distancia) / MAX_DIST) * 100)
 }
 
+export { API_BASE }
+
 export function isFull(distancia) {
   return distancia !== -1 && distancia <= 25
 }

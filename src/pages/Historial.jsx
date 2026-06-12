@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react'
-import { api, calculateFillPercentage } from '../services/api'
+import { api, calculateFillPercentage, API_BASE } from '../services/api'
 
 const COLUMNS = [
-  { key: 'fecha', label: 'Fecha y Hora', render: (v) => new Date(v).toLocaleString('es-ES') },
+  { key: 'creado_en', label: 'Fecha y Hora', render: (v) => new Date(v).toLocaleString('es-ES') },
   { key: 'tacho_nombre', label: 'Tacho', render: (v) => v || '—' },
   { key: 'distancia', label: 'Distancia (cm)', render: (v) => v === -1 ? 'Error' : `${v} cm` },
   { key: 'porcentaje', label: 'Llenado (%)', render: (v) => `${v}%` }
@@ -27,12 +27,12 @@ export default function Historial() {
         const allRecords = []
         for (const [id, tacho] of tachoMap) {
           try {
-            const res = await fetch(`/api/tachos/${id}/historial`)
+            const res = await fetch(`${API_BASE}/tachos/${id}/historial`)
             if (res.ok) {
               const data = await res.json()
               allRecords.push(...data.map(r => ({
                 tacho_id: r.tacho_id,
-                fecha: r.fecha,
+                creado_en: r.creado_en,
                 distancia: r.distancia,
                 tacho_nombre: tacho?.nombre,
                 porcentaje: calculateFillPercentage(r.distancia)
@@ -42,7 +42,7 @@ export default function Historial() {
             console.error(`Error fetching historial for tacho ${id}:`, e)
           }
         }
-        mounted && setRecords(allRecords.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)))
+        mounted && setRecords(allRecords.sort((a, b) => new Date(b.creado_en) - new Date(a.creado_en)))
       })
       .catch(err => mounted && setError(err.message))
       .finally(() => mounted && setLoading(false))
@@ -137,7 +137,7 @@ export default function Historial() {
             </thead>
             <tbody>
               {filteredRecords.map((record, index) => (
-                <tr key={`${record.tacho_id}-${record.fecha}-${index}`}>
+                <tr key={`${record.tacho_id}-${record.creado_en}-${index}`}>
                   {COLUMNS.map(col => (
                     <td key={col.key}>{col.render(record[col.key])}</td>
                   ))}
