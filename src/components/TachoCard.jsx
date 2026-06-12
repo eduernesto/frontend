@@ -11,7 +11,7 @@ export default function TachoCard({ tacho }) {
       <div className="tacho-header">
         <div className="tacho-id">#{tacho.id}</div>
         <div className={`tacho-status ${full ? 'status-full' : 'status-ok'}`} aria-live="polite">
-          {full ? '🔴 LLENO' : '🟢 DISPONIBLE'}
+          {full ? 'LLENO' : 'DISPONIBLE'}
         </div>
       </div>
       <h3 className="tacho-name">{tacho.nombre || 'Sin nombre'}</h3>
@@ -23,7 +23,7 @@ export default function TachoCard({ tacho }) {
         <span className="tacho-distance">
           {distancia === -1 ? 'Sensor error' : `${distancia} cm de ${120} cm`}
         </span>
-        {full && <span className="tacho-alert">⚠ Requiere recolección</span>}
+        {full && <span className="tacho-alert">Requiere recoleccion</span>}
       </div>
     </article>
   )

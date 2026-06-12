@@ -96,7 +96,7 @@ export default function Historial() {
           <h1>Historial de Mediciones</h1>
         </header>
         <div className="error-state">
-          <p>⚠️ Error cargando historial: {error}</p>
+          <p>Error cargando historial: {error}</p>
           <button onClick={() => window.location.reload()} className="btn-retry">Reintentar</button>
         </div>
       </section>

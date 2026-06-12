@@ -43,7 +43,7 @@ export default function Estado() {
       <section className="page estado-page" role="alert">
         <StatsCards />
         <div className="error-state">
-          <p>⚠️ Error cargando tachos: {error}</p>
+          <p>Error cargando tachos: {error}</p>
           <button onClick={() => window.location.reload()} className="btn-retry">Reintentar</button>
         </div>
       </section>
