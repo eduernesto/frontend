@@ -9,9 +9,18 @@ async function fetchJson(endpoint, options = {}) {
     ...options
   })
 
+  const contentType = response.headers.get('content-type')
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error desconocido' }))
-    throw new Error(error.message || `Error ${response.status}`)
+    if (contentType && contentType.includes('application/json')) {
+      const error = await response.json()
+      throw new Error(error.message || `Error ${response.status}`)
+    }
+    throw new Error(`Error ${response.status}: ${response.statusText}`)
+  }
+
+  if (!contentType || !contentType.includes('application/json')) {
+    throw new Error(`Respuesta inesperada del servidor (no JSON)`)
   }
 
   return response.json()
