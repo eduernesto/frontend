@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { api, calculateFillPercentage, API_BASE } from '../services/api'
+import { subscribeToHistorial } from '../services/supabase'
 
 const COLUMNS = [
   { key: 'creado_en', label: 'Fecha y Hora', render: (v) => new Date(v).toLocaleString('es-ES') },
@@ -8,22 +9,20 @@ const COLUMNS = [
   { key: 'porcentaje', label: 'Llenado (%)', render: (v) => `${v}%` }
 ]
 
-function createTachoMap(tachos) {
-  return new Map(tachos.map(t => [t.id, t]))
-}
-
 export default function Historial() {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filterTacho, setFilterTacho] = useState('')
+  const tachoMapRef = useRef(new Map())
 
   useEffect(() => {
     let mounted = true
     api.getTachos()
       .then(async (tachos) => {
         if (!mounted) return
-        const tachoMap = createTachoMap(tachos)
+        const tachoMap = new Map(tachos.map(t => [t.id, t]))
+        tachoMapRef.current = tachoMap
         const allRecords = []
         for (const [id, tacho] of tachoMap) {
           try {
@@ -46,7 +45,22 @@ export default function Historial() {
       })
       .catch(err => mounted && setError(err.message))
       .finally(() => mounted && setLoading(false))
-    return () => { mounted = false }
+
+    const unsubscribe = subscribeToHistorial((nuevo) => {
+      const tacho = tachoMapRef.current.get(nuevo.tacho_id)
+      setRecords(prev => [{
+        tacho_id: nuevo.tacho_id,
+        creado_en: nuevo.creado_en,
+        distancia: nuevo.distancia,
+        tacho_nombre: tacho?.nombre,
+        porcentaje: calculateFillPercentage(nuevo.distancia)
+      }, ...prev])
+    })
+
+    return () => {
+      mounted = false
+      unsubscribe()
+    }
   }, [])
 
   const tachoOptions = useMemo(() => {

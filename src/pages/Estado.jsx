@@ -1,20 +1,57 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { api } from '../services/api'
+import { subscribeToTachos } from '../services/supabase'
 import StatsCards from '../components/StatsCards'
 import TachoCard from '../components/TachoCard'
+
+const MAX_DIST = 120
+const UMBRAL = 25
+
+function enrichTacho(t) {
+  const dist = t.distancia_actual
+  return {
+    ...t,
+    porcentaje: dist === -1 ? 0 : Math.min(100, Math.max(0, Math.round(((MAX_DIST - dist) / MAX_DIST) * 100))),
+    esta_lleno: dist !== -1 && dist <= UMBRAL
+  }
+}
 
 export default function Estado() {
   const [tachos, setTachos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const stats = useMemo(() => ({
+    total: tachos.length,
+    llenos: tachos.filter(t => t.esta_lleno).length,
+    disponibles: tachos.filter(t => !t.esta_lleno).length
+  }), [tachos])
+
   useEffect(() => {
     let mounted = true
-    api.getTachos()
-      .then(data => mounted && setTachos(data))
-      .catch(err => mounted && setError(err.message))
-      .finally(() => mounted && setLoading(false))
-    return () => { mounted = false }
+
+    const loadInitial = async () => {
+      try {
+        const data = await api.getTachos()
+        if (mounted) setTachos(data.map(enrichTacho))
+      } catch (err) {
+        if (mounted) setError(err.message)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    loadInitial()
+
+    const unsubscribe = subscribeToTachos((updated) => {
+      const enriched = enrichTacho(updated)
+      setTachos(prev => prev.map(t => t.id === enriched.id ? enriched : t))
+    })
+
+    return () => {
+      mounted = false
+      unsubscribe()
+    }
   }, [])
 
   if (loading) {
@@ -56,7 +93,7 @@ export default function Estado() {
         <h1>Estado General de los Tachos</h1>
         <p className="page-subtitle">Monitoreo en tiempo real del nivel de llenado</p>
       </header>
-      <StatsCards />
+      <StatsCards stats={stats} />
       <div className="tachos-section">
         <h2 className="section-title">Estado Individual</h2>
         <div className="tachos-grid" role="list" aria-label="Lista de tachos">

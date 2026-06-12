@@ -7,19 +7,24 @@ const STATS_CONFIG = [
   { key: 'disponibles', label: 'Disponibles', color: 'var(--color-success)' }
 ]
 
-export default function StatsCards() {
+export default function StatsCards({ stats: propStats } = {}) {
   const [stats, setStats] = useState({ total: 0, llenos: 0, disponibles: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    if (propStats) {
+      setStats(propStats)
+      setLoading(false)
+      return
+    }
     let mounted = true
     api.getStats()
       .then(data => mounted && setStats(data))
       .catch(err => mounted && setError(err.message))
       .finally(() => mounted && setLoading(false))
     return () => { mounted = false }
-  }, [])
+  }, [propStats])
 
   if (loading) {
     return (
